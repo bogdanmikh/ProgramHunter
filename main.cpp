@@ -25,9 +25,9 @@ int main() {
         } else if (state == 2) {
             client = new Client;
             std::string ipServer;
-            // std::cout << "Input ip server: ";
-            // std::cin >> ipServer;
-            ipServer = "127.0.0.1";
+             std::cout << "Input ip server: ";
+             std::cin >> ipServer;
+//            ipServer = "127.0.0.1";
             client->onAttach({ipServer, port});
             break;
         } else {

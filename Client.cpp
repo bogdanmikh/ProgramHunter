@@ -39,6 +39,10 @@ void Client::onAttach(const ServerData& serverData) {
 }
 
 void Client::onUpdate() {
+    if (enet_host_service(m_client, &m_event, 5000) > 0 && m_event.type == ENET_EVENT_TYPE_CONNECT) {
+        m_connected = true;
+        std::cout << "Connected to server!" << std::endl;
+    }
     while (enet_host_service(m_client, &m_event, 10) > 0) {
         if (m_event.type == ENET_EVENT_TYPE_CONNECT) {
             m_connected = true;
