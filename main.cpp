@@ -5,12 +5,12 @@
 #include "Client.hpp"
 
 void clientFunc(const PushData& data) {
+    ProgramHunter p;
+    p.killProcess(p.getPidProcess(std::string(data.message).c_str()));
     std::cout << "Message: " << data.message << std::endl;
 }
 
 int main() {
-    ProgramHunter p;
-    p.killProcess(p.getPidProcess("Arc"));
     Server* server = nullptr;
     Client* client = nullptr;
     std::cout << "1 is server, 2 is client\n";

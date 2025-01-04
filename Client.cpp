@@ -56,7 +56,10 @@ void Client::onUpdate() {
     }
 
     // m_data.message = "Loh";
-    strcpy(m_data.message, "loh");
+    std::cout << "Input process: \n";
+    std::string s;
+    std::cin >> s;
+    strcpy(m_data.message, s.c_str());
     sendData(m_data);
 
     // sendData("HELLO", strlen("HELLO"));
