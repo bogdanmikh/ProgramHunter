@@ -38,8 +38,8 @@ void Client::onAttach(const ServerData& serverData) {
     }
 }
 
-void Client::onUpdate() {
-    if (enet_host_service(m_client, &m_event, 5000) > 0 && m_event.type == ENET_EVENT_TYPE_CONNECT) {
+void Client::onUpdate(ClientInputFunc func) {
+    if (!m_connected && enet_host_service(m_client, &m_event, 5000) > 0 && m_event.type == ENET_EVENT_TYPE_CONNECT) {
         m_connected = true;
         std::cout << "Connected to server!" << std::endl;
     }
@@ -60,10 +60,7 @@ void Client::onUpdate() {
     }
 
     // m_data.message = "Loh";
-    std::cout << "Input process: \n";
-    std::string s;
-    std::cin >> s;
-    strcpy(m_data.message, s.c_str());
+    func(m_data);
     sendData(m_data);
 
     // sendData("HELLO", strlen("HELLO"));

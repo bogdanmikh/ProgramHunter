@@ -35,7 +35,7 @@ Pid ProgramHunter::getPidProcess(const char *nameProgram) {
 
     if (!proc_dir) {
         std::cerr << "Not open catalog /proc" << std::endl;
-        return pid;
+        return INVALID_PID;
     }
     struct dirent* entry;
     while ((entry = readdir(proc_dir)) != nullptr) {

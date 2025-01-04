@@ -11,10 +11,12 @@ struct ServerData {
     int port;
 };
 
+using ClientInputFunc = void (*)(PushData&);
+
 class Client {
 public:
     void onAttach(const ServerData& serverData);
-    void onUpdate();
+    void onUpdate(ClientInputFunc func);
     void onDetach();
     bool serverValid();
     void sendData(const PushData &pushData);

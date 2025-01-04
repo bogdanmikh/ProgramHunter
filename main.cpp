@@ -10,6 +10,13 @@ void clientFunc(const PushData& data) {
     std::cout << "Message: " << data.message << std::endl;
 }
 
+void clientInputFunc(PushData& data) {
+    std::cout << "Input process: \n";
+    std::string s;
+    std::cin >> s;
+    strcpy(data.message, s.c_str());
+}
+
 int main() {
     Server* server = nullptr;
     Client* client = nullptr;
@@ -39,7 +46,7 @@ int main() {
         if (state == 1) {
             server->onUpdate(clientFunc);
         } else if (state == 2) {
-            client->onUpdate();
+            client->onUpdate(clientInputFunc);
             if (!client->serverValid()) {
                 break;
             }
