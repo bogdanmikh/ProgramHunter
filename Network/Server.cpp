@@ -53,6 +53,7 @@ void Server::onUpdate() {
             } else if (data->hunter.has_value()) {
                 auto hunterData = data->hunter.value();
                 auto victimName = hunterData.nameVictim;
+                std::cout << "Attacked: " << victimName << std::endl;
                 for (auto &client : m_clients) {
                     if (client.state == InitData::State::UNKNOWN || client.state == InitData::State::HUNTER) {
                         continue;
@@ -88,7 +89,16 @@ void Server::onDetach() {
 }
 
 void Server::addClient(const ClientData &clientData) {
-    std::cout << "Connected: " << clientData.name << std::endl;
+//    std::cout << "Connected: " << clientData.name << std::endl;
+    for (auto &client : m_clients) {
+        if (client.state != clientData.state) {
+            continue;
+        }
+        if (strcmp(client.name, clientData.name) == 0) {
+            std::cout << "This name is occupied\n";
+            return;
+        }
+    }
     m_clients.emplace_back();
     strcpy(m_clients.back().name, clientData.name);
     m_clients.back().peer = clientData.peer;

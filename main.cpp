@@ -32,20 +32,20 @@ int main() {
             victim = new Victim;
             std::string ipServer, name;
             std::cout << "Input ip server: ";
-//            std::cin >> ipServer;
+            std::cin >> ipServer;
             std::cout << "Input name: ";
             std::cin >> name;
-            ipServer = "127.0.0.1";
+//            ipServer = "127.0.0.1";
             victim->onAttach({ipServer, port}, name.c_str());
             break;
         } else if (state == 3) {
             hunter = new Hunter;
             std::string ipServer, name;
             std::cout << "Input ip server: ";
-//            std::cin >> ipServer;
+            std::cin >> ipServer;
             std::cout << "Input name: ";
             std::cin >> name;
-            ipServer = "127.0.0.1";
+//            ipServer = "127.0.0.1";
             hunter->onAttach({ipServer, port}, name.c_str());
             break;
         } else {
@@ -60,14 +60,17 @@ int main() {
             victim->onUpdate(victimFunc);
         } else if (state == 3) {
             hunter->onUpdate();
-            if (i == 0) {
-                PushData pushData;
-                pushData.hunter.emplace();
-                auto &hunterData = pushData.hunter.value();
-                strcpy(hunterData.nameVictim, "timur");
-                strcpy(hunterData.nameProcess, "Arc");
-                hunter->sendData(pushData);
-            }
+            std::cout << "Enter the victim's name: ";
+            std::string nameVictim, processName;
+            std::cin >> nameVictim;
+            std::cout << "Enter the process name: ";
+            std::cin >> processName;
+            PushData pushData;
+            pushData.hunter.emplace();
+            auto &hunterData = pushData.hunter.value();
+            strcpy(hunterData.nameVictim, nameVictim.c_str());
+            strcpy(hunterData.nameProcess, processName.c_str());
+            hunter->sendData(pushData);
         }
     }
 
