@@ -3,17 +3,13 @@ project(ProgramHunter)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(ProgramHunter main.cpp PlatformDetection.hpp
-        Server.cpp
-        Server.hpp
-        Client.cpp
-        Client.hpp
-        BaseNetwork.hpp
-        ProgramHunter.cpp
-        ProgramHunter.hpp)
+set(NETWORK_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Network)
+set(VENDOR_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Vendor)
+
+add_executable(ProgramHunter main.cpp)
 
 add_subdirectory(Vendor/enet)
+add_subdirectory(Foundation)
+add_subdirectory(Network)
 
-# Dependencies - enet
-target_link_libraries(ProgramHunter enet_static)
-target_include_directories(ProgramHunter PRIVATE ${VENDOR_DIRECTORY}/enet)
+target_link_libraries(ProgramHunter Network)

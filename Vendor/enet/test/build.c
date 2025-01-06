@@ -55,7 +55,7 @@ int main() {
 
     int i = 0;
     ENetHost *server;
-    Client clients[MAX_CLIENTS];
+    Hunter clients[MAX_CLIENTS];
     ENetAddress address = {0};
 
     address.host = ENET_HOST_ANY; /* Bind the server to the default localhost. */

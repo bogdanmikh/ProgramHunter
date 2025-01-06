@@ -1,10 +1,12 @@
 //
-// Created by timur on 04.01.2025.
+// Created by Bogdan on 04.01.2025.
 //
 
-#include "Client.hpp"
+#include "Victim.hpp"
 
-void Client::onAttach(const ServerData& serverData) {
+#include <iostream>
+
+void Victim::onAttach(const ServerData& serverData, const char* name) {
     if (enet_initialize() < 0) {
         fprintf(stderr, "An error occurred while initializing ENet.\n");
         return;
@@ -36,22 +38,28 @@ void Client::onAttach(const ServerData& serverData) {
                 "No available peers for initiating an ENet connection.\n");
         exit(EXIT_FAILURE);
     }
+    while (!m_connected) {
+        m_connected = serverValid();
+    }
+    std::cout << "Connected to server!" << std::endl;
+    m_data.initData.emplace();
+    auto &initData = m_data.initData.value();
+    strcpy(initData.name, name);
+    initData.state = InitData::State::VICTIM;
+    sendData(m_data);
+    m_data.initData.reset();
 }
 
-void Client::onUpdate(ClientInputFunc func) {
-    if (!m_connected && enet_host_service(m_client, &m_event, 5000) > 0 && m_event.type == ENET_EVENT_TYPE_CONNECT) {
-        m_connected = true;
-        std::cout << "Connected to server!" << std::endl;
-    }
+void Victim::onUpdate(VictimFunc func) {
     while (enet_host_service(m_client, &m_event, 10) > 0) {
         if (m_event.type == ENET_EVENT_TYPE_CONNECT) {
             m_connected = true;
             std::cout << "Connected to server!" << std::endl;
+            sendData(m_data);
         } else if (m_event.type == ENET_EVENT_TYPE_RECEIVE) {
-            //  auto data = (PushData*)m_event.packet->data;
-            // std::cout << "Message from Server: " << data->message << std::endl;
-            // enet_packet_destroy(m_event.packet);
-            // std::cin >> m_data.message;
+            auto data = m_event.packet->data;
+            func(data);
+            enet_packet_destroy(m_event.packet);
             // sendData((void*)&m_data, sizeof(m_data));
         } else if (m_event.type == ENET_EVENT_TYPE_DISCONNECT) {
             puts("Disconnection succeeded.");
@@ -59,16 +67,10 @@ void Client::onUpdate(ClientInputFunc func) {
         }
     }
 
-    // m_data.message = "Loh";
-    func(m_data);
-    sendData(m_data);
-
-    // sendData("HELLO", strlen("HELLO"));
-
-    usleep(16000);
+//    usleep(16000);
 }
 
-void Client::onDetach() {
+void Victim::onDetach() {
     if (!m_connected) {
         enet_peer_reset(m_server);
     }
@@ -76,7 +78,7 @@ void Client::onDetach() {
     enet_deinitialize();
 }
 
-bool Client::serverValid() {
+bool Victim::serverValid() {
     if (m_connected) {
         return true;
     }
@@ -84,7 +86,7 @@ bool Client::serverValid() {
     return enet_host_service(m_client, &m_event, timeoutServer ) > 0;
 }
 
-void Client::sendData(const PushData &pushData) {
+void Victim::sendData(const PushData &pushData) {
     if (m_server->state != ENET_PEER_STATE_CONNECTED) {
         return;
     }
@@ -92,7 +94,7 @@ void Client::sendData(const PushData &pushData) {
     sendData((void*)&m_data, sizeof(m_data));
 }
 
-void Client::sendData(const void* data, size_t size) {
+void Victim::sendData(const void* data, size_t size) {
     ENetPacket *packet = enet_packet_create(data, size, ENET_PACKET_FLAG_RELIABLE);
     //the second parameter is the channel id
     enet_peer_send(m_server, 0, packet);

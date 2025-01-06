@@ -29,7 +29,8 @@ std::string getProcessName(pid_t pid) {
 
 #include "ProgramHunter.hpp"
 
-Pid ProgramHunter::getPidProcess(const char *nameProgram) {
+namespace ProgramHunter {
+Pid getPidProcess(const char *nameProgram) {
 #ifdef PLATFORM_LINUX
     DIR* proc_dir = opendir("/proc");
 
@@ -83,7 +84,7 @@ Pid ProgramHunter::getPidProcess(const char *nameProgram) {
 #endif
 }
 
-void ProgramHunter::printALlProcess() {
+void printALlProcess() {
 #ifdef PLATFORM_LINUX
     Pid pid = INVALID_PID;
     DIR* proc_dir = opendir("/proc");
@@ -132,7 +133,7 @@ void ProgramHunter::printALlProcess() {
 #endif
 }
 
-bool ProgramHunter::killProcess(Pid pid) {
+bool killProcess(Pid pid) {
     if (pid == INVALID_PID) {
         return false;
     }
@@ -141,3 +142,4 @@ bool ProgramHunter::killProcess(Pid pid) {
 #endif
 }
 
+}

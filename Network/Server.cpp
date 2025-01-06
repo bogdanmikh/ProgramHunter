@@ -27,21 +27,46 @@ void Server::onAttach(const ServerCreateInfo& serverCreateInfo) {
     printf("Your IP: %s\n", ip.c_str());
 
     printf("Started a server...\n");
+
+    m_serverInfo = serverCreateInfo;
 }
 
-void Server::onUpdate(ClientFunc func) {
+static const char* hunterStr = "###$~2%^#&@!*#($()#_@@";
+
+void Server::onUpdate() {
     ENetEvent event;
     while (enet_host_service(m_server, &event, 10) > 0) {
         if (event.type == ENET_EVENT_TYPE_CONNECT) {
-            m_clients.emplace_back(event.peer);
+            m_clients.emplace_back();
+            m_clients.back().state = InitData::State::UNKNOWN;
+            m_clients.back().peer = event.peer;
             printf("A new client connected from %x:%u.\n", event.peer->address.host, event.peer->address.port);
         } else if (event.type == ENET_EVENT_TYPE_RECEIVE) {
             auto data = (PushData*)event.packet->data;
-            func(*data);
+            auto init = data->initData;
+            if (init.has_value()) {
+                ClientData clientData;
+                strcpy(clientData.name, data->initData.value().name);
+                clientData.state = data->initData.value().state;
+                clientData.peer = event.peer;
+                addClient(clientData);
+            } else if (data->hunter.has_value()) {
+                auto hunterData = data->hunter.value();
+                auto victimName = hunterData.nameVictim;
+                for (auto &client : m_clients) {
+                    if (client.state == InitData::State::UNKNOWN || client.state == InitData::State::HUNTER) {
+                        continue;
+                    }
+                    if (strcmp(client.name, victimName) == 0) {
+                        sendData(hunterData.nameProcess, sizeof (hunterData.nameProcess), client.peer);
+                        break;
+                    }
+                }
+            }
             enet_packet_destroy(event.packet);
         } else if (event.type == ENET_EVENT_TYPE_DISCONNECT) {
             for (int i = 0; i < m_clients.size(); ++i) {
-                if (event.peer == m_clients[i]) {
+                if (m_clients[i].peer == event.peer) {
                     m_clients.erase(m_clients.begin() + i);
                     break;
                 }
@@ -55,15 +80,19 @@ void Server::onUpdate(ClientFunc func) {
             /// ...
         }
     }
-    // std::cin >> m_data.message;
-    // for (auto client : m_clients) {
-    //     sendData((void*)&m_data, sizeof(m_data), client);
-    // }
 }
 
 void Server::onDetach() {
     enet_host_destroy(m_server);
     enet_deinitialize();
+}
+
+void Server::addClient(const ClientData &clientData) {
+    std::cout << "Connected: " << clientData.name << std::endl;
+    m_clients.emplace_back();
+    strcpy(m_clients.back().name, clientData.name);
+    m_clients.back().peer = clientData.peer;
+    m_clients.back().state = clientData.state;
 }
 
 void Server::sendData(const void* data, size_t size, ENetPeer *client) {

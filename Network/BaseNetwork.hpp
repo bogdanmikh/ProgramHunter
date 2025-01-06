@@ -3,13 +3,10 @@
 //
 #pragma once
 
-#pragma once
-
 #include <iostream>
 #include <string>
 #include <vector>
-#include <enet.h>
-
+#include <optional>
 #include "PlatformDetection.hpp"
 
 #ifdef PLATFORM_WINDOWS
@@ -20,7 +17,7 @@
 #include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <netinet/in.h>
-#include <string.h>
+#include <cstring>
 #endif
 
 
@@ -65,7 +62,30 @@ static std::vector<std::string> getLocalIPAddresses() {
     return ipAddresses;
 }
 
+struct HunterData {
+    char nameProcess[100];
+    char nameVictim[100];
+};
+
+struct InitData {
+    enum State { UNKNOWN = 0, VICTIM, HUNTER };
+    State state;
+    char name[100];
+};
+
 struct PushData {
-    /// something data
-    char message[100];
+    std::optional<InitData> initData;
+    std::optional<HunterData> hunter;
+};
+
+
+struct ServerCreateInfo {
+    std::string name;
+    int port;
+};
+
+struct ServerData {
+    // localhost 127.0.0.1
+    std::string ip;
+    int port;
 };

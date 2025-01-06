@@ -5,24 +5,24 @@
 
 #include "BaseNetwork.hpp"
 #include <enet.h>
-#include <vector>
+#include <set>
 
-struct ServerCreateInfo {
-    std::string name;
-    int port;
+struct ClientData {
+    char name[100];
+    InitData::State state;
+    ENetPeer* peer;
 };
 
-using ClientFunc = void (*)(const PushData&);
-
-// у кого что то вырубают
 class Server {
 public:
     void onAttach(const ServerCreateInfo& serverCreateInfo);
-    void onUpdate(ClientFunc func);
+    void onUpdate();
     void onDetach();
 private:
+    void addClient(const ClientData &clientData);
     static const int maxClients = 4;
     void sendData(const void* data, size_t size, ENetPeer *client);
     ENetHost* m_server;
-    std::vector<ENetPeer*> m_clients;
+    std::vector<ClientData> m_clients;
+    ServerCreateInfo m_serverInfo;
 };

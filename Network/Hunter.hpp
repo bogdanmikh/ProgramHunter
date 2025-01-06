@@ -5,18 +5,11 @@
 
 #include "BaseNetwork.hpp"
 #include <enet.h>
-struct ServerData {
-    // localhost 127.0.0.1
-    std::string ip;
-    int port;
-};
 
-using ClientInputFunc = void (*)(PushData&);
-
-class Client {
+class Hunter {
 public:
-    void onAttach(const ServerData& serverData);
-    void onUpdate(ClientInputFunc func);
+    void onAttach(const ServerData& serverData, const char* name);
+    void onUpdate();
     void onDetach();
     bool serverValid();
     void sendData(const PushData &pushData);

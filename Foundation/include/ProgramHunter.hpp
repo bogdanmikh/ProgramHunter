@@ -10,10 +10,8 @@
 
 using Pid = int64_t;
 
-class ProgramHunter {
-public:
+namespace ProgramHunter {
     Pid getPidProcess(const char* nameProgram);
     void printALlProcess();
     bool killProcess(Pid pid);
-private:
-};
+}
