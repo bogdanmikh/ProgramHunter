@@ -53,7 +53,7 @@ int main() {
         }
     }
 
-    for (int i = 0; i < 1000000; ++i) {
+    while (true) {
         if (state == 1) {
             server->onUpdate();
         } else if (state == 2) {

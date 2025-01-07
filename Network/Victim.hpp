@@ -22,5 +22,4 @@ private:
     ENetEvent m_event;
 
     PushData m_data;
-    bool m_connected = false;
 };

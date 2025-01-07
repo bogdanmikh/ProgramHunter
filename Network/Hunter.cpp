@@ -62,6 +62,7 @@ void Hunter::onUpdate() {
         }
     }
 
+
     // sendData("HELLO", strlen("HELLO"));
 
     usleep(16000);

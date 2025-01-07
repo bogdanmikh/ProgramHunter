@@ -13,4 +13,5 @@ add_subdirectory(Foundation)
 add_subdirectory(Network)
 
 target_link_libraries(ProgramHunter Network)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config.txt DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/cmake-build-debug)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config.txt DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/build/)

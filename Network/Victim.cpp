@@ -38,9 +38,7 @@ void Victim::onAttach(const ServerData& serverData, const char* name) {
                 "No available peers for initiating an ENet connection.\n");
         exit(EXIT_FAILURE);
     }
-    while (!m_connected) {
-        m_connected = serverValid();
-    }
+    while (!serverValid());
     std::cout << "Connected to server!" << std::endl;
     m_data.initData.emplace();
     auto &initData = m_data.initData.value();
@@ -53,7 +51,6 @@ void Victim::onAttach(const ServerData& serverData, const char* name) {
 void Victim::onUpdate(VictimFunc func) {
     while (enet_host_service(m_client, &m_event, 10) > 0) {
         if (m_event.type == ENET_EVENT_TYPE_CONNECT) {
-            m_connected = true;
             std::cout << "Connected to server!" << std::endl;
             sendData(m_data);
         } else if (m_event.type == ENET_EVENT_TYPE_RECEIVE) {
@@ -63,26 +60,21 @@ void Victim::onUpdate(VictimFunc func) {
             // sendData((void*)&m_data, sizeof(m_data));
         } else if (m_event.type == ENET_EVENT_TYPE_DISCONNECT) {
             puts("Disconnection succeeded.");
-            m_connected = false;
         }
     }
+    while (!serverValid());
 
 //    usleep(16000);
 }
 
 void Victim::onDetach() {
-    if (!m_connected) {
-        enet_peer_reset(m_server);
-    }
+    enet_peer_reset(m_server);
     enet_host_destroy(m_client);
     enet_deinitialize();
 }
 
 bool Victim::serverValid() {
-    if (m_connected) {
-        return true;
-    }
-    static int timeoutServer = 100;
+    static int timeoutServer = 1000;
     return enet_host_service(m_client, &m_event, timeoutServer ) > 0;
 }
 
