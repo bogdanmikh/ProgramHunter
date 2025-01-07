@@ -79,7 +79,7 @@ bool Hunter::serverValid() {
     if (m_connected) {
         return true;
     }
-    static int timeoutServer = 100;
+    static int timeoutServer = 5000;
     return enet_host_service(m_client, &m_event, timeoutServer ) > 0;
 }
 

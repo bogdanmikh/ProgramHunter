@@ -66,8 +66,10 @@ void Server::onUpdate() {
             }
             enet_packet_destroy(event.packet);
         } else if (event.type == ENET_EVENT_TYPE_DISCONNECT) {
+            std::cout << "Disconnect\n";
             for (int i = 0; i < m_clients.size(); ++i) {
                 if (m_clients[i].peer == event.peer) {
+                    std::cout << "Disconnected: " << m_clients[i].name << std::endl;
                     m_clients.erase(m_clients.begin() + i);
                     break;
                 }
@@ -96,6 +98,7 @@ void Server::addClient(const ClientData &clientData) {
         }
         if (strcmp(client.name, clientData.name) == 0) {
             std::cout << "This name is occupied\n";
+            client.peer = clientData.peer;
             return;
         }
     }

@@ -2,6 +2,7 @@
 #include "Network/Victim.hpp"
 #include "Network/Server.hpp"
 #include "ProgramHunter.hpp"
+#include <fstream>
 
 void victimFunc(void *killProcess) {
     auto nameProcess = (char*)killProcess;
@@ -16,14 +17,17 @@ void clientInputFunc(PushData& data) {
 }
 
 int main() {
+    std::ifstream inputFile("config.txt");
+
     Server* server = nullptr;
     Hunter* hunter = nullptr;
     Victim* victim = nullptr;
+
     int state;
     const int port = 7777;
     while (true) {
-        std::cout << "1 is server, 2 is victim, 3 is hunter!!!\n";
-        std::cin >> state;
+//        std::cout << "1 is server, 2 is victim, 3 is hunter!!!\n";
+        inputFile >> state;
         if (state == 1) {
             server = new Server;
             server->onAttach({"Server", port});
@@ -31,20 +35,16 @@ int main() {
         } else if (state == 2) {
             victim = new Victim;
             std::string ipServer, name;
-            std::cout << "Input ip server: ";
-            std::cin >> ipServer;
-            std::cout << "Input name: ";
-            std::cin >> name;
+            inputFile >> ipServer;
+            inputFile >> name;
 //            ipServer = "127.0.0.1";
             victim->onAttach({ipServer, port}, name.c_str());
             break;
         } else if (state == 3) {
             hunter = new Hunter;
             std::string ipServer, name;
-            std::cout << "Input ip server: ";
-            std::cin >> ipServer;
-            std::cout << "Input name: ";
-            std::cin >> name;
+            inputFile >> ipServer;
+            inputFile >> name;
 //            ipServer = "127.0.0.1";
             hunter->onAttach({ipServer, port}, name.c_str());
             break;
