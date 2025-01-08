@@ -58,6 +58,8 @@ void Hunter::onUpdate() {
                 return;
             }
             m_connected = false;
+        }
+        if (!m_connected) {
             printf("Not connected!!!\n");
             return;
         }

@@ -58,6 +58,8 @@ void Victim::onUpdate(VictimFunc func) {
                 return;
             }
             m_connected = false;
+        }
+        if (!m_connected) {
             printf("Not connected!!!\n");
             return;
         }

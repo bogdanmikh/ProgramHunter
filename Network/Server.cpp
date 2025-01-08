@@ -4,6 +4,8 @@
 
 #include "Server.hpp"
 
+#define INVALID_USER -1
+
 void Server::onAttach(const ServerCreateInfo& serverCreateInfo) {
     if (enet_initialize() < 0) {
         printf("An error occurred while initializing ENet.\n");
@@ -52,29 +54,42 @@ void Server::onUpdate() {
                 auto hunterData = data->hunter.value();
                 auto victimName = hunterData.nameVictim;
                 int index = getIndexByPeer(event.peer);
-                if (index == -1) {
+                if (index == INVALID_USER) {
                     printf("Hunter not found!\n");
                     return;
                 }
                 printf("Hunter: %s, Attacked: %s\n", m_clients[getIndexByPeer(event.peer)].name, victimName);
+                bool victimFound = false;
                 for (auto &client : m_clients) {
                     if (client.state == InitData::State::UNKNOWN || client.state == InitData::State::HUNTER) {
                         continue;
                     }
                     if (strcmp(client.name, victimName) == 0) {
+                        victimFound = true;
                         sendData(hunterData.nameProcess, sizeof (hunterData.nameProcess), client.peer);
                         break;
                     }
+                }
+                if (!victimFound) {
+                    printf("The victim was not found\n");
                 }
             }
             enet_packet_destroy(event.packet);
         } else if (event.type == ENET_EVENT_TYPE_DISCONNECT) {
             int index = getIndexByPeer(event.peer);
+            if (index == INVALID_USER) {
+                printf("The user was not found\n");
+                continue;
+            }
             printf("Disconnect: %s\n", m_clients[index].name);
             m_clients.erase(m_clients.begin() + index);
             event.peer->data = nullptr;
         } else if (event.type == ENET_EVENT_TYPE_DISCONNECT_TIMEOUT) {
             int index = getIndexByPeer(event.peer);
+            if (index == INVALID_USER) {
+                printf("The user was not found\n");
+                continue;
+            }
             printf("Disconnected timeout: %s\n", m_clients[index].name);
             m_clients.erase(m_clients.begin() + index);
             /* Reset the peer's client information. */
@@ -114,7 +129,7 @@ int Server::getIndexByPeer(ENetPeer *client) {
             return i;
         }
     }
-    return -1;
+    return INVALID_USER;
 }
 
 int Server::getIndexByName(const char *name) {
@@ -123,7 +138,7 @@ int Server::getIndexByName(const char *name) {
             return i;
         }
     }
-    return -1;
+    return INVALID_USER;
 }
 
 void Server::sendData(const void* data, size_t size, ENetPeer *client) {
