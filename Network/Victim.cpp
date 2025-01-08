@@ -3,8 +3,7 @@
 //
 
 #include "Victim.hpp"
-
-#include <iostream>
+#include "Config.hpp"
 
 void Victim::onAttach(const ServerData& serverData, const char* name) {
     if (enet_initialize() < 0) {
@@ -12,9 +11,7 @@ void Victim::onAttach(const ServerData& serverData, const char* name) {
         return;
     }
 
-    ENetAddress address = { 0 };
-    address.host = ENET_HOST_ANY;
-    address.port = serverData.port;
+    m_serverData = serverData;
 
     m_client = enet_host_create(nullptr /* create a client host */,
                                 1 /* only allow 1 outgoing connection */,
@@ -22,49 +19,62 @@ void Victim::onAttach(const ServerData& serverData, const char* name) {
                                 0 /* assume any amount of incoming bandwidth */,
                                 0 /* assume any amount of outgoing bandwidth */);
 
-    enet_address_set_host(&address, serverData.ip.c_str());
-    address.port = serverData.port;
-    m_server = enet_host_connect(m_client, &address, 2, 0);
-
-    // m_client = nullptr;
     if (m_client == nullptr) {
         fprintf(stderr,
                 "An error occurred while trying to create an ENet client host.\n");
         exit(EXIT_FAILURE);
     }
 
+    tryConnect();
     if (m_server == nullptr) {
         fprintf(stderr,
                 "No available peers for initiating an ENet connection.\n");
         exit(EXIT_FAILURE);
     }
-    while (!serverValid());
-    std::cout << "Connected to server!" << std::endl;
+    if (!serverValid()) {
+        printf("Not connected!!!\n");
+        return;
+    }
+    printf("Connected to server!\n");
+
     m_data.initData.emplace();
     auto &initData = m_data.initData.value();
     strcpy(initData.name, name);
     initData.state = InitData::State::VICTIM;
     sendData(m_data);
     m_data.initData.reset();
+
+    m_connected = true;
 }
 
 void Victim::onUpdate(VictimFunc func) {
+    if (!serverValid()) {
+        for (int i = 0; i < COUNT_TRY_CONNECT; ++i) {
+            printf("Try connect ...\n");
+            tryConnect();
+            if (serverValid()) {
+                m_connected = true;
+                printf("Again connected to server!\n");
+                return;
+            }
+            m_connected = false;
+            printf("Not connected!!!\n");
+            return;
+        }
+    }
     while (enet_host_service(m_client, &m_event, 10) > 0) {
         if (m_event.type == ENET_EVENT_TYPE_CONNECT) {
-            std::cout << "Connected to server!" << std::endl;
-            sendData(m_data);
+
         } else if (m_event.type == ENET_EVENT_TYPE_RECEIVE) {
             auto data = m_event.packet->data;
             func(data);
             enet_packet_destroy(m_event.packet);
             // sendData((void*)&m_data, sizeof(m_data));
         } else if (m_event.type == ENET_EVENT_TYPE_DISCONNECT) {
-            puts("Disconnection succeeded.");
+            m_connected = false;
+            printf("Disconnection succeeded.");
         }
     }
-    while (!serverValid());
-
-//    usleep(16000);
 }
 
 void Victim::onDetach() {
@@ -74,12 +84,12 @@ void Victim::onDetach() {
 }
 
 bool Victim::serverValid() {
-    static int timeoutServer = 1000;
-    return enet_host_service(m_client, &m_event, timeoutServer ) > 0;
+    return m_server->state == ENET_PEER_STATE_CONNECTED;
 }
 
 void Victim::sendData(const PushData &pushData) {
-    if (m_server->state != ENET_PEER_STATE_CONNECTED) {
+    if (!serverValid()) {
+        printf("Not connected!!!\n");
         return;
     }
     m_data = pushData;
@@ -90,4 +100,20 @@ void Victim::sendData(const void* data, size_t size) {
     ENetPacket *packet = enet_packet_create(data, size, ENET_PACKET_FLAG_RELIABLE);
     //the second parameter is the channel id
     enet_peer_send(m_server, 0, packet);
+}
+
+bool Victim::isConnected() const {
+    return m_connected;
+}
+
+void Victim::tryConnect() {
+    ENetAddress address = { 0 };
+    address.host = ENET_HOST_ANY;
+    address.port = m_serverData.port;
+
+    enet_address_set_host(&address, m_serverData.ip.c_str());
+    enet_address_set_host(&address, m_serverData.ip.c_str());
+    address.port = m_serverData.port;
+    m_server = enet_host_connect(m_client, &address, 2, 0);
+    enet_host_service(m_client, &m_event, TIMEOUT_SERVER);
 }

@@ -19,7 +19,9 @@ public:
     void onUpdate();
     void onDetach();
 private:
-    void addClient(const ClientData &clientData);
+    void initClient(const ClientData &clientData);
+    int getIndexByPeer(ENetPeer *client);
+    int getIndexByName(const char *name);
     static const int maxClients = 4;
     void sendData(const void* data, size_t size, ENetPeer *client);
     ENetHost* m_server;

@@ -5,6 +5,8 @@ bin-int
 cmake-build-debug
 cmake-build-release
 build
+server
+client
 out
 xcode
 

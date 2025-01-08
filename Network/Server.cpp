@@ -31,8 +31,6 @@ void Server::onAttach(const ServerCreateInfo& serverCreateInfo) {
     m_serverInfo = serverCreateInfo;
 }
 
-static const char* hunterStr = "###$~2%^#&@!*#($()#_@@";
-
 void Server::onUpdate() {
     ENetEvent event;
     while (enet_host_service(m_server, &event, 10) > 0) {
@@ -49,11 +47,16 @@ void Server::onUpdate() {
                 strcpy(clientData.name, data->initData.value().name);
                 clientData.state = data->initData.value().state;
                 clientData.peer = event.peer;
-                addClient(clientData);
+                initClient(clientData);
             } else if (data->hunter.has_value()) {
                 auto hunterData = data->hunter.value();
                 auto victimName = hunterData.nameVictim;
-                std::cout << "Attacked: " << victimName << std::endl;
+                int index = getIndexByPeer(event.peer);
+                if (index == -1) {
+                    printf("Hunter not found!\n");
+                    return;
+                }
+                printf("Hunter: %s, Attacked: %s\n", m_clients[getIndexByPeer(event.peer)].name, victimName);
                 for (auto &client : m_clients) {
                     if (client.state == InitData::State::UNKNOWN || client.state == InitData::State::HUNTER) {
                         continue;
@@ -66,17 +69,14 @@ void Server::onUpdate() {
             }
             enet_packet_destroy(event.packet);
         } else if (event.type == ENET_EVENT_TYPE_DISCONNECT) {
-            std::cout << "Disconnect\n";
-            for (int i = 0; i < m_clients.size(); ++i) {
-                if (m_clients[i].peer == event.peer) {
-                    std::cout << "Disconnected: " << m_clients[i].name << std::endl;
-                    m_clients.erase(m_clients.begin() + i);
-                    break;
-                }
-            }
+            int index = getIndexByPeer(event.peer);
+            printf("Disconnect: %s\n", m_clients[index].name);
+            m_clients.erase(m_clients.begin() + index);
             event.peer->data = nullptr;
         } else if (event.type == ENET_EVENT_TYPE_DISCONNECT_TIMEOUT) {
-            printf("%s disconnected due to timeout.\n", event.peer->data);
+            int index = getIndexByPeer(event.peer);
+            printf("Disconnected timeout: %s\n", m_clients[index].name);
+            m_clients.erase(m_clients.begin() + index);
             /* Reset the peer's client information. */
             event.peer->data = nullptr;
         } else if (event.type == ENET_EVENT_TYPE_NONE) {
@@ -90,7 +90,7 @@ void Server::onDetach() {
     enet_deinitialize();
 }
 
-void Server::addClient(const ClientData &clientData) {
+void Server::initClient(const ClientData &clientData) {
 //    std::cout << "Connected: " << clientData.name << std::endl;
     for (auto &client : m_clients) {
         if (client.state != clientData.state) {
@@ -98,14 +98,32 @@ void Server::addClient(const ClientData &clientData) {
         }
         if (strcmp(client.name, clientData.name) == 0) {
             std::cout << "This name is occupied\n";
-            client.peer = clientData.peer;
             return;
         }
     }
-    m_clients.emplace_back();
-    strcpy(m_clients.back().name, clientData.name);
-    m_clients.back().peer = clientData.peer;
-    m_clients.back().state = clientData.state;
+    int index = getIndexByPeer(clientData.peer);
+    m_clients[index].peer = clientData.peer;
+    m_clients[index].state = clientData.state;
+    printf("New client: %s\n", clientData.name);
+    strcpy(m_clients[index].name, clientData.name);
+}
+
+int Server::getIndexByPeer(ENetPeer *client) {
+    for (int i = 0; i < m_clients.size(); ++i) {
+        if (m_clients[i].peer->connectID == client->connectID) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int Server::getIndexByName(const char *name) {
+    for (int i = 0; i < m_clients.size(); ++i) {
+        if (strcmp(m_clients[i].name, name) == 0) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 void Server::sendData(const void* data, size_t size, ENetPeer *client) {
