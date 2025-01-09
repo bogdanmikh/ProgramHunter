@@ -83,6 +83,9 @@ void Hunter::onDetach() {
 }
 
 bool Hunter::serverValid() {
+    if (m_server == nullptr) {
+        return false;
+    }
     return m_server->state == ENET_PEER_STATE_CONNECTED;
 }
 
