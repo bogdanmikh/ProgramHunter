@@ -25,6 +25,10 @@ std::string getProcessName(pid_t pid) {
     proc_name(pid, name, sizeof(name));
     return std::string(name);
 }
+#elif defined(PLATFORM_WINDOWS)
+#include <windows.h>
+#include <tlhelp32.h>
+#include <psapi.h>
 #endif
 
 #include "ProgramHunter.hpp"
@@ -81,6 +85,27 @@ Pid getPidProcess(const char *nameProgram) {
         }
     }
     return INVALID_PID;
+#elif defined(PLATFORM_WINDOWS)
+    PROCESSENTRY32 entry;
+    entry.dwSize = sizeof(PROCESSENTRY32);
+
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+    if (snapshot == INVALID_HANDLE_VALUE) {
+        return INVALID_PID;
+    }
+
+    if (Process32First(snapshot, &entry)) {
+        do {
+            if (_stricmp(entry.szExeFile, nameProgram) == 0) {
+                CloseHandle(snapshot);
+                return static_cast<Pid>(entry.th32ProcessID);
+            }
+        } while (Process32Next(snapshot, &entry));
+    }
+
+    CloseHandle(snapshot);
+    return INVALID_PID;
 #endif
 }
 
@@ -130,6 +155,29 @@ void printALlProcess() {
             std::cout << pids[i] << "\t" << processName << std::endl;
         }
     }
+#elif defined(PLATFORM_WINDOWS)
+    PROCESSENTRY32 pe32;
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+
+    HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hProcessSnap == INVALID_HANDLE_VALUE) {
+        std::cerr << "Error: failed to create a snapshot of processes" << std::endl;
+        return;
+    }
+
+    if (!Process32First(hProcessSnap, &pe32)) {
+        std::cerr << "Error: couldn't get information about the process" << std::endl;
+        CloseHandle(hProcessSnap);
+        return;
+    }
+
+    std::cout << "List of running processes:" << std::endl;
+
+    do {
+        std::wcout << L"Pid: " << pe32.th32ProcessID << L", Process: " << pe32.szExeFile << std::endl;
+    } while (Process32Next(hProcessSnap, &pe32));
+
+    CloseHandle(hProcessSnap);
 #endif
 }
 
@@ -139,6 +187,18 @@ bool killProcess(Pid pid) {
     }
 #ifdef PLATFORM_POSIX
     return kill((pid_t)pid, SIGKILL) == 0;
+#elif defined(PLATFORM_WINDOWS)
+    HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, static_cast<DWORD>(pid));
+
+    if (hProcess == NULL) {
+        return false;
+    }
+
+    BOOL result = TerminateProcess(hProcess, 1);
+
+    CloseHandle(hProcess);
+
+    return result != FALSE;
 #endif
 }
 
